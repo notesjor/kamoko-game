@@ -1,4 +1,4 @@
-﻿namespace CorpusExplorer.Tool4.KAMOKO.QuestionSampler.Model
+﻿namespace KAMOKO.Game.Model
 {
   public class Constant : AbstractFragment
   {

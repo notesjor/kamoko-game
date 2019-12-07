@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using CorpusExplorer.Tool4.KAMOKO.Model;
 using CorpusExplorer.Tool4.KAMOKO.Model.Fragment;
 using CorpusExplorer.Tool4.KAMOKO.Model.Vote;
-using CorpusExplorer.Tool4.KAMOKO.QuestionSampler.Model;
+using KAMOKO.Game.Model;
 using Newtonsoft.Json;
 
 namespace CorpusExplorer.Tool4.KAMOKO.QuestionSampler

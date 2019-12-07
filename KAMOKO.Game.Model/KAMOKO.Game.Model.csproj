@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1F5F5DFF-2F28-4CD5-808A-0382910932D5}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>CorpusExplorer.Tool4.KAMOKO.QuestionSampler</RootNamespace>
-    <AssemblyName>CorpusExplorer.Tool4.KAMOKO.QuestionSampler</AssemblyName>
+    <ProjectGuid>{7B19A21E-6C16-4B71-9EDF-1E82D3D707F5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>KAMOKO.Game.Model</RootNamespace>
+    <AssemblyName>KAMOKO.Game.Model</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +23,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -33,12 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,23 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="AbstractFragment.cs" />
+    <Compile Include="Constant.cs" />
+    <Compile Include="Option.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sentence.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\CorpusExplorerV2\CorpusExplorer\CorpusExplorer.Tool4.KAMOKO.Model\CorpusExplorer.Tool4.KAMOKO.Model.csproj">
-      <Project>{3E8C0170-1D13-4C87-A474-8F5C0493D23D}</Project>
-      <Name>CorpusExplorer.Tool4.KAMOKO.Model</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\KAMOKO.Game.Model\KAMOKO.Game.Model.csproj">
-      <Project>{7b19a21e-6c16-4b71-9edf-1e82d3d707f5}</Project>
-      <Name>KAMOKO.Game.Model</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
