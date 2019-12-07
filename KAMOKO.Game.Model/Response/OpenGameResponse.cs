@@ -12,5 +12,6 @@ namespace KAMOKO.Game.Model.Response
     public string Course { get; set; }
     public int Questions { get; set; }
     public int Timeout { get; set; }
+    public int Difficult { get; set; }
   }
 }

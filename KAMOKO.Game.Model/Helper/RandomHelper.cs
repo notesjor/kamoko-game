@@ -11,6 +11,8 @@ namespace KAMOKO.Game.Model.Helper
 
     public static int GetNumber() => _rnd.Next(10000000, 99999999);
 
+    public static int GetNumber(int min, int max) => _rnd.Next(min, max);
+
     public static string GetGuid() => Guid.NewGuid().ToString("N");
   }
 }

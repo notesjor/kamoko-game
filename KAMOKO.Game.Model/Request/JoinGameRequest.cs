@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace KAMOKO.Game.Model.Request
 {
-  class JoinGameRequest
+  public class JoinGameRequest
   {
+    public bool IsPrivateGame { get; set; }
+    public string GameId { get; set; }
   }
 }

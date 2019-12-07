@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading;
 using KAMOKO.Game.Model.GameFile;
 using KAMOKO.Game.Model.GameState;
+using KAMOKO.Game.Model.Helper;
+using KAMOKO.Game.Model.Request;
 using KAMOKO.Game.Model.Response;
 using Newtonsoft.Json;
 using Tfres;
@@ -41,13 +43,14 @@ namespace KAMOKO.Game.Server
 
       _server.AddEndpoint(HttpVerb.GET, "/ping", (arg) => new HttpResponse(arg, true, 200));
       _server.AddEndpoint(HttpVerb.GET, "/time", (arg) => new HttpResponse(arg, true, 200, DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")));
-      _server.AddEndpoint(HttpVerb.GET, "/list", ListOpenGamesRequest);
-      _server.AddEndpoint(HttpVerb.GET, "/join", JoinGameRequest);
       _server.AddEndpoint(HttpVerb.GET, "/courses", (arg) => new HttpResponse(arg, true, 200, _courseList));
-      _server.AddEndpoint(HttpVerb.GET, "/new", CreateGameRequest);
-      _server.AddEndpoint(HttpVerb.GET, "/start", StartGameRequest);
-      _server.AddEndpoint(HttpVerb.GET, "/submit", SubmitGameRequest);
-      _server.AddEndpoint(HttpVerb.GET, "/stats", StatisticsGameRequest);
+      _server.AddEndpoint(HttpVerb.GET, "/opengames", ListOpenGamesRequest);
+      _server.AddEndpoint(HttpVerb.POST, "/join", JoinGameRequest);
+      _server.AddEndpoint(HttpVerb.POST, "/new", CreateGameRequest);
+      _server.AddEndpoint(HttpVerb.GET, "/wait", WaitGameRequest);
+      _server.AddEndpoint(HttpVerb.POST, "/start", StartGameRequest);
+      _server.AddEndpoint(HttpVerb.POST, "/submit", SubmitGameRequest);
+      _server.AddEndpoint(HttpVerb.POST, "/stats", StatisticsGameRequest);
 
       Console.WriteLine("ok!");
 
@@ -99,48 +102,189 @@ namespace KAMOKO.Game.Server
 
     private string[] CleanupWorkFindObsoleteItems(ref Dictionary<string, KamokoGameStateServer> dic)
     {
-      var res = new List<string>();
-      foreach (var item in dic)
+      try
       {
-        if (item.Value.End < DateTime.Now)
-          res.Add(item.Key);
+        var res = new List<string>();
+        foreach (var item in dic)
+        {
+          if (item.Value.End < DateTime.Now)
+            res.Add(item.Key);
+        }
+
+        return res.ToArray();
       }
-      return res.ToArray();
+      catch
+      {
+        return new string[0];
+      }
     }
 
     private HttpResponse StatisticsGameRequest(HttpRequest arg)
     {
-
+      try { }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
     }
 
     private HttpResponse SubmitGameRequest(HttpRequest arg)
     {
-
+      try { }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
     }
 
     private HttpResponse StartGameRequest(HttpRequest arg)
     {
+      try { }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
+    }
 
+    private HttpResponse WaitGameRequest(HttpRequest arg)
+    {
+      try
+      {
+        var gameId = arg.GetData()["gameid"];
+
+      }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
     }
 
     private HttpResponse CreateGameRequest(HttpRequest arg)
     {
+      try
+      {
+        var req = arg.PostData<CreateGameRequest>();
 
+        if (req.IsMultiPlayer)
+        {
+          if (req.IsOpen)
+          {
+            var state = NewGameState(req, DateTime.Now.AddSeconds(90), DateTime.Now.AddMinutes(45));
+            _gamesPublic.Add(RandomHelper.GetGuid(), state);
+
+            return new HttpResponse(arg, true, 200, state.CreatePlayerState());
+          }
+          else
+          {
+            var state = NewGameState(req, DateTime.Now.AddSeconds(90), DateTime.Now.AddDays(8));
+            _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+
+            return new HttpResponse(arg, true, 200, $"#GAME#{state.GameId}-{state.AdminId}");
+          }
+        }
+        else
+        {
+          var state = NewGameState(req, DateTime.Now.AddSeconds(10), DateTime.Now.AddMinutes(45));
+          _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+
+          return new HttpResponse(arg, true, 200, state.CreatePlayerState());
+        }
+      }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
+    }
+
+    private KamokoGameStateServer NewGameState(CreateGameRequest req, DateTime start, DateTime end)
+    {
+      var course = _courses[req.Course];
+
+      #region Random Selection
+      var init = new List<int>();
+      for (int i = 0; i < course.Length; i++)
+        init.Add(i);
+
+      var rand = new List<int>();
+      while (init.Count > 0)
+      {
+        if (init.Count == 1)
+        {
+          rand.Add(init[0]);
+          break;
+        }
+
+        var idx = RandomHelper.GetNumber(0, init.Count);
+        var tmp = init[idx];
+        init.RemoveAt(idx);
+        rand.Add(tmp);
+      }
+
+      var select = new QuestSentence[req.Questions];
+      for (var i = 0; i < select.Length; i++)
+      {
+        var idx = RandomHelper.GetNumber(0, rand.Count);
+        var tmp = rand[idx];
+        rand.RemoveAt(idx);
+        select[i] = course[tmp];
+      }
+      #endregion
+
+      return new KamokoGameStateServer
+      {
+        AdminId = RandomHelper.GetNumber(),
+        Course = req.Course,
+        Difficult = req.Difficult,
+        Start = start,
+        End = end,
+        GameId = RandomHelper.GetNumber(),
+        Questions = select,
+        Timeout = req.Timeout < 5 ? 5 : req.Timeout
+      };
     }
 
     private HttpResponse JoinGameRequest(HttpRequest arg)
     {
+      try
+      {
+        var req = arg.PostData<JoinGameRequest>();
 
+        if (req.IsPrivateGame)
+        {
+          if (req.GameId.Contains("-"))
+          {
+
+          }
+        }
+        else
+        {
+
+        }
+      }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
     }
 
     private HttpResponse ListOpenGamesRequest(HttpRequest arg)
     {
-      var data = _gamesPublic.Values.Take(25).Select(q => new OpenGameResponse
+      try
       {
-        Course = q.Course,
-        Questions = q.Questions.Length
-      }).ToArray();
-      return new HttpResponse(arg, true, 200, data);
+        var data = _gamesPublic.Values.Reverse().Take(25).Select(q => new OpenGameResponse
+        {
+          Course = q.Course,
+          Questions = q.Questions.Length,
+          Start = q.Start,
+          Timeout = q.Timeout,
+          Difficult = q.Difficult
+        }).ToArray();
+        return new HttpResponse(arg, true, 200, data);
+      }
+      catch
+      {
+        return new HttpResponse(arg, false, 500);
+      }
     }
 
     private void LoadGames()

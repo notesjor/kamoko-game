@@ -13,5 +13,6 @@ namespace KAMOKO.Game.Model.GameState
     public DateTime Start { get; set; }
     public QuestSentence[] Questions { get; set; }
     public int Timeout { get; set; }
+    public int Difficult { get; set; }
   }
 }
