@@ -59,7 +59,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CorpusExplorer.Tool4.KAMOKO.Model\CorpusExplorer.Tool4.KAMOKO.Model.csproj">
+    <ProjectReference Include="..\..\..\CorpusExplorerV2\CorpusExplorer\CorpusExplorer.Tool4.KAMOKO.Model\CorpusExplorer.Tool4.KAMOKO.Model.csproj">
       <Project>{3E8C0170-1D13-4C87-A474-8F5C0493D23D}</Project>
       <Name>CorpusExplorer.Tool4.KAMOKO.Model</Name>
     </ProjectReference>
