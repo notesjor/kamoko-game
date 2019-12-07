@@ -4,39 +4,35 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KAMOKO.Game.Model;
+using KAMOKO.Game.Model.GameFile;
+using KAMOKO.Game.Model.GameState;
+using Newtonsoft.Json;
 
 namespace KAMOKO.Game.Server
 {
   class Program
   {
-    static void Main(string[] args)
+    static void Main()
     {
-      LoadCourses();
+      EnsureDirectories();
+      StartServer();
     }
 
-    private static void LoadCourses()
+    private static void StartServer()
     {
-      Console.WriteLine("COURSES:");
+      var service = new KamokoWebService();
+      service.Start();
+    }
 
-      var files = Directory.GetFiles("courses", "*.kamokoQuest");
-      foreach (var file in files)
-      {
-        Console.Write($"{file}...");
-        try
-        {
-
-
-          Console.WriteLine("ok!");
-        }
-        catch(Exception ex)
-        {
-          Console.WriteLine("error!");
-          Console.WriteLine(ex.Message);
-          Console.WriteLine(ex.StackTrace);
-        }
-      }
-
-      Console.WriteLine($"{} COURSES AVAILABLE!");
+    private static void EnsureDirectories()
+    {
+      if (!Directory.Exists("courses"))
+        Directory.CreateDirectory("courses");
+      if (!Directory.Exists("gamesPublic"))
+        Directory.CreateDirectory("gamesPublic");
+      if (!Directory.Exists("gamesPrivate"))
+        Directory.CreateDirectory("gamesPrivate");
     }
   }
 }

@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\CorpusExplorerV2\CorpusExplorer\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -43,16 +46,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="KamokoWebService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="KamokoWebServiceConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="webService.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="courses\Negation.kamokoQuest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\KAMOKO.Game.Model\KAMOKO.Game.Model.csproj">
+      <Project>{7b19a21e-6c16-4b71-9edf-1e82d3d707f5}</Project>
+      <Name>KAMOKO.Game.Model</Name>
+    </ProjectReference>
     <ProjectReference Include="W:\Kooperationsprojekte\TfresWebserver\TefresWebserver\TFRES.csproj">
       <Project>{63f6b9f6-ff80-4764-bd45-109d549bf459}</Project>
       <Name>TFRES</Name>

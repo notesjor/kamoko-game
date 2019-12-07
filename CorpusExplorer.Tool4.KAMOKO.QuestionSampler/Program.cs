@@ -9,6 +9,7 @@ using CorpusExplorer.Tool4.KAMOKO.Model;
 using CorpusExplorer.Tool4.KAMOKO.Model.Fragment;
 using CorpusExplorer.Tool4.KAMOKO.Model.Vote;
 using KAMOKO.Game.Model;
+using KAMOKO.Game.Model.GameFile;
 using Newtonsoft.Json;
 
 namespace CorpusExplorer.Tool4.KAMOKO.QuestionSampler

@@ -1,0 +1,5 @@
+{
+  "Ip": "127.0.0.1",
+  "Port": 3030,
+  "BackgroundWorkerTimespan": 60000 
+}

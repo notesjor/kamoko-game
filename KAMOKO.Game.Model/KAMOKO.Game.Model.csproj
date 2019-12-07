@@ -41,11 +41,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractFragment.cs" />
-    <Compile Include="Constant.cs" />
-    <Compile Include="Option.cs" />
+    <Compile Include="ApiMessages\GameFile.cs" />
+    <Compile Include="ApiMessages\InputNumber.cs" />
+    <Compile Include="ApiMessages\InputSelect.cs" />
+    <Compile Include="ApiMessages\InputText.cs" />
+    <Compile Include="ApiMessages\Message.cs" />
+    <Compile Include="GameFile\Abstract\AbstractFragment.cs" />
+    <Compile Include="GameFile\Constant.cs" />
+    <Compile Include="GameFile\Option.cs" />
+    <Compile Include="GameState\AbstractKamokoGameState.cs" />
+    <Compile Include="GameState\KamokoGameStatePlayer.cs" />
+    <Compile Include="GameState\KamokoGameStateServer.cs" />
+    <Compile Include="Helper\CryptoHelper.cs" />
+    <Compile Include="Helper\RandomHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sentence.cs" />
+    <Compile Include="GameFile\QuestSentence.cs" />
+    <Compile Include="Request\JoinGameRequest.cs" />
+    <Compile Include="Response\OpenGameResponse.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
