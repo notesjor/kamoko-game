@@ -1,4 +1,5 @@
-﻿using KAMOKO.Game.Model.Helper;
+﻿using KAMOKO.Game.Model.GameState.Abstract;
+using KAMOKO.Game.Model.Helper;
 
 namespace KAMOKO.Game.Model.GameState
 {

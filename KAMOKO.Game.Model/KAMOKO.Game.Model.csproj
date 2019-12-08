@@ -49,7 +49,10 @@
     <Compile Include="GameFile\Abstract\AbstractFragment.cs" />
     <Compile Include="GameFile\Constant.cs" />
     <Compile Include="GameFile\Option.cs" />
-    <Compile Include="GameState\AbstractKamokoGameState.cs" />
+    <Compile Include="GameMode\Abstract\AbstractKamokoGameMode.cs" />
+    <Compile Include="GameMode\KamokoGameModeEasy.cs" />
+    <Compile Include="GameMode\KamokoGameModeComplex.cs" />
+    <Compile Include="GameState\Abstract\AbstractKamokoGameState.cs" />
     <Compile Include="GameState\KamokoGameStatePlayer.cs" />
     <Compile Include="GameState\KamokoGameStateServer.cs" />
     <Compile Include="Helper\CryptoHelper.cs" />
@@ -57,8 +60,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GameFile\QuestSentence.cs" />
     <Compile Include="Request\CreateGameRequest.cs" />
+    <Compile Include="Request\ExtendedSubmitGameRequest.cs" />
     <Compile Include="Request\JoinGameRequest.cs" />
+    <Compile Include="Request\SubmitGameRequest.cs" />
     <Compile Include="Response\OpenGameResponse.cs" />
+    <Compile Include="Response\SubmitGameResponse.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

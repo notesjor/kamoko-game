@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using KAMOKO.Game.Model.GameState.Abstract;
+using KAMOKO.Game.Model.Request;
 
 namespace KAMOKO.Game.Model.GameState
 {
@@ -7,6 +10,8 @@ namespace KAMOKO.Game.Model.GameState
   {
     public int AdminId { get; set; }
     public DateTime End { get; set; }
+
+    public List<ExtendedSubmitGameRequest> Answers { get; set; } = new List<ExtendedSubmitGameRequest>();
 
     public KamokoGameStatePlayer CreatePlayerState()
     {

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using KAMOKO.Game.Model.GameFile;
+using KAMOKO.Game.Model.GameMode;
 using KAMOKO.Game.Model.GameState;
 using KAMOKO.Game.Model.Helper;
 using KAMOKO.Game.Model.Request;
@@ -48,9 +49,9 @@ namespace KAMOKO.Game.Server
       _server.AddEndpoint(HttpVerb.POST, "/join", JoinGameRequest);
       _server.AddEndpoint(HttpVerb.POST, "/new", CreateGameRequest);
       _server.AddEndpoint(HttpVerb.GET, "/wait", WaitGameRequest);
-      _server.AddEndpoint(HttpVerb.POST, "/start", StartGameRequest);
+      _server.AddEndpoint(HttpVerb.GET, "/start", StartGameRequest);
       _server.AddEndpoint(HttpVerb.POST, "/submit", SubmitGameRequest);
-      _server.AddEndpoint(HttpVerb.POST, "/stats", StatisticsGameRequest);
+      _server.AddEndpoint(HttpVerb.GET, "/stats", StatisticsGameRequest);
 
       Console.WriteLine("ok!");
 
@@ -121,7 +122,24 @@ namespace KAMOKO.Game.Server
 
     private HttpResponse StatisticsGameRequest(HttpRequest arg)
     {
-      try { }
+      try
+      {
+        var get = arg.GetData();
+        var gameId = get["gameid"];
+        var adminId = get["adminid"];
+        var mode = get["mode"];
+
+        KamokoGameStateServer game;
+        lock (_lock)
+          game = mode == "private" 
+                   ? _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]] 
+                   : _gamesPublic[gameId];
+
+        if (game.AdminId != int.Parse(adminId))
+          return new HttpResponse(arg, false, 501, "wrong AdminId");
+
+
+      }
       catch
       {
         return new HttpResponse(arg, false, 500);
@@ -130,7 +148,32 @@ namespace KAMOKO.Game.Server
 
     private HttpResponse SubmitGameRequest(HttpRequest arg)
     {
-      try { }
+      try
+      {
+        var req = arg.PostData<SubmitGameRequest>();
+        KamokoGameStateServer game;
+        lock (_lock)
+          game = _gamesPrivate[_gamesPrivateResolver[int.Parse(req.GameId)]];
+
+        int total = 0, score = 0;
+        switch (game.Difficult)
+        {
+          case 1:
+          case 2:
+            new KamokoGameModeEasy().Calculate(ref game, ref req, out score, out total);
+            break;
+          case 3:
+          case 4:
+            new KamokoGameModeComplex().Calculate(ref game, ref req, out score, out total);
+            break;
+        }
+
+        var resp = new SubmitGameResponse { Score = score, Total = total };
+        lock (_lock)
+          game.Answers.Add(new ExtendedSubmitGameRequest { Request = req, Response = resp });
+
+        return new HttpResponse(arg, true, 200, resp);
+      }
       catch
       {
         return new HttpResponse(arg, false, 500);
@@ -139,7 +182,22 @@ namespace KAMOKO.Game.Server
 
     private HttpResponse StartGameRequest(HttpRequest arg)
     {
-      try { }
+      try
+      {
+        var get = arg.GetData();
+        var gameId = get["gameid"];
+        var adminId = get["adminid"];
+
+        KamokoGameStateServer game;
+        lock (_lock)
+          game = _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]];
+
+        if (game.AdminId != int.Parse(adminId))
+          return new HttpResponse(arg, false, 501, "wrong AdminId");
+
+        game.Start = DateTime.Now.AddSeconds(15);
+        return new HttpResponse(arg, true, 200);
+      }
       catch
       {
         return new HttpResponse(arg, false, 500);
@@ -151,7 +209,17 @@ namespace KAMOKO.Game.Server
       try
       {
         var gameId = arg.GetData()["gameid"];
+        bool notStarted;
+        DateTime startTime;
+        lock (_lock)
+        {
+          startTime = _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]].Start;
+          notStarted = startTime == DateTime.MaxValue;
+        }
 
+        return notStarted
+                 ? new HttpResponse(arg, true, 201, "wait")
+                 : new HttpResponse(arg, true, 200, (startTime - DateTime.Now).Seconds.ToString());
       }
       catch
       {
@@ -170,14 +238,21 @@ namespace KAMOKO.Game.Server
           if (req.IsOpen)
           {
             var state = NewGameState(req, DateTime.Now.AddSeconds(90), DateTime.Now.AddMinutes(45));
-            _gamesPublic.Add(RandomHelper.GetGuid(), state);
+            lock (_lock)
+              _gamesPublic.Add(RandomHelper.GetGuid(), state);
 
             return new HttpResponse(arg, true, 200, state.CreatePlayerState());
           }
           else
           {
-            var state = NewGameState(req, DateTime.Now.AddSeconds(90), DateTime.Now.AddDays(8));
-            _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+            var state = NewGameState(req, DateTime.MaxValue, DateTime.Now.AddDays(8));
+            lock (_lock)
+            {
+              var guid = RandomHelper.GetGuid();
+              var num = state.GameId;
+
+              _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+            }
 
             return new HttpResponse(arg, true, 200, $"#GAME#{state.GameId}-{state.AdminId}");
           }
@@ -185,7 +260,8 @@ namespace KAMOKO.Game.Server
         else
         {
           var state = NewGameState(req, DateTime.Now.AddSeconds(10), DateTime.Now.AddMinutes(45));
-          _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+          lock (_lock)
+            _gamesPrivate.Add(RandomHelper.GetGuid(), state);
 
           return new HttpResponse(arg, true, 200, state.CreatePlayerState());
         }
@@ -251,14 +327,13 @@ namespace KAMOKO.Game.Server
 
         if (req.IsPrivateGame)
         {
-          if (req.GameId.Contains("-"))
-          {
-
-          }
+          lock (_lock)
+            return new HttpResponse(arg, true, 200, _gamesPrivate[_gamesPrivateResolver[int.Parse(req.GameId)]].CreatePlayerState());
         }
         else
         {
-
+          lock (_lock)
+            return new HttpResponse(arg, true, 200, _gamesPublic[req.GameId].CreatePlayerState());
         }
       }
       catch
@@ -271,15 +346,15 @@ namespace KAMOKO.Game.Server
     {
       try
       {
-        var data = _gamesPublic.Values.Reverse().Take(25).Select(q => new OpenGameResponse
-        {
-          Course = q.Course,
-          Questions = q.Questions.Length,
-          Start = q.Start,
-          Timeout = q.Timeout,
-          Difficult = q.Difficult
-        }).ToArray();
-        return new HttpResponse(arg, true, 200, data);
+        lock (_lock)
+          return new HttpResponse(arg, true, 200, _gamesPublic.Values.Reverse().Take(25).Select(q => new OpenGameResponse
+          {
+            Course = q.Course,
+            Questions = q.Questions.Length,
+            Start = q.Start,
+            Timeout = q.Timeout,
+            Difficult = q.Difficult
+          }).ToArray());
       }
       catch
       {

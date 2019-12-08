@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using KAMOKO.Game.Model.GameFile;
 
-namespace KAMOKO.Game.Model.GameState
+namespace KAMOKO.Game.Model.GameState.Abstract
 {
   public abstract class AbstractKamokoGameState
   {
