@@ -8,7 +8,7 @@ namespace KAMOKO.Game.Model.GameState
 {
   public class KamokoGameStateServer : AbstractKamokoGameState
   {
-    public int AdminId { get; set; }
+    public Guid AdminId { get; set; }
     public DateTime End { get; set; }
 
     public List<ExtendedSubmitGameRequest> Answers { get; set; } = new List<ExtendedSubmitGameRequest>();

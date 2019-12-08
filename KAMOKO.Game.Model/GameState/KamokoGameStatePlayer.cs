@@ -1,11 +1,11 @@
-﻿using KAMOKO.Game.Model.GameState.Abstract;
-using KAMOKO.Game.Model.Helper;
+﻿using System;
+using KAMOKO.Game.Model.GameState.Abstract;
 
 namespace KAMOKO.Game.Model.GameState
 {
   public class KamokoGameStatePlayer : AbstractKamokoGameState
   {
-    public int PlayerId { get; set; } = RandomHelper.GetNumber();
-    public string PlayerName { get; set; } = "#ID:" + RandomHelper.GetGuid();
+    public Guid PlayerId { get; set; } = Guid.NewGuid();
+    public string PlayerName { get; set; } = "PLAYER";
   }
 }

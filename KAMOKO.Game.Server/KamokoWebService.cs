@@ -8,7 +8,6 @@ using System.Threading;
 using KAMOKO.Game.Model.GameFile;
 using KAMOKO.Game.Model.GameMode;
 using KAMOKO.Game.Model.GameState;
-using KAMOKO.Game.Model.Helper;
 using KAMOKO.Game.Model.Request;
 using KAMOKO.Game.Model.Response;
 using Newtonsoft.Json;
@@ -19,19 +18,18 @@ namespace KAMOKO.Game.Server
   public class KamokoWebService
   {
     private Dictionary<string, QuestSentence[]> _courses = new Dictionary<string, QuestSentence[]>();
-    private Dictionary<string, KamokoGameStateServer> _gamesPublic = new Dictionary<string, KamokoGameStateServer>();
-    private Dictionary<string, KamokoGameStateServer> _gamesPrivate = new Dictionary<string, KamokoGameStateServer>();
-    private Dictionary<int, string> _gamesPrivateResolver = new Dictionary<int, string>();
+    private Dictionary<Guid, KamokoGameStateServer> _gamesPublic = new Dictionary<Guid, KamokoGameStateServer>();
+    private Dictionary<Guid, KamokoGameStateServer> _gamesPrivate = new Dictionary<Guid, KamokoGameStateServer>();
     private Tfres.Server _server;
     private BackgroundWorker _worker;
     private int _workerTimespan;
     private object _lock = new object();
     private string _courseList;
+    private Random _rnd = new Random();
 
     public KamokoWebService()
     {
       LoadCourses();
-      LoadGames();
     }
 
     public void Start()
@@ -87,10 +85,7 @@ namespace KAMOKO.Game.Server
           if (del != null && del.Length > 0)
             lock (_lock)
               foreach (var x in del)
-              {
                 _gamesPrivate.Remove(x);
-                _gamesPrivateResolver.Remove(_gamesPrivate[x].GameId);
-              }
         }
         catch
         {
@@ -101,11 +96,11 @@ namespace KAMOKO.Game.Server
       }
     }
 
-    private string[] CleanupWorkFindObsoleteItems(ref Dictionary<string, KamokoGameStateServer> dic)
+    private Guid[] CleanupWorkFindObsoleteItems(ref Dictionary<Guid, KamokoGameStateServer> dic)
     {
       try
       {
-        var res = new List<string>();
+        var res = new List<Guid>();
         foreach (var item in dic)
         {
           if (item.Value.End < DateTime.Now)
@@ -116,7 +111,7 @@ namespace KAMOKO.Game.Server
       }
       catch
       {
-        return new string[0];
+        return new Guid[0];
       }
     }
 
@@ -132,13 +127,14 @@ namespace KAMOKO.Game.Server
         KamokoGameStateServer game;
         lock (_lock)
           game = mode == "private" 
-                   ? _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]] 
-                   : _gamesPublic[gameId];
+                   ? _gamesPrivate[Guid.Parse(gameId)] 
+                   : _gamesPublic[Guid.Parse(gameId)];
 
-        if (game.AdminId != int.Parse(adminId))
-          return new HttpResponse(arg, false, 501, "wrong AdminId");
-
-
+        return mode == "private"
+                 ? game.AdminId != Guid.Parse(adminId)
+                     ? new HttpResponse(arg, false, 501, "wrong AdminId")
+                     : new HttpResponse(arg, true, 200, game.Answers.Select(x => x.Response).ToArray())
+                 : new HttpResponse(arg, true, 200, game.Answers.Select(x => x.Response).OrderByDescending(x => x.Score).Take(10).ToArray());
       }
       catch
       {
@@ -153,7 +149,7 @@ namespace KAMOKO.Game.Server
         var req = arg.PostData<SubmitGameRequest>();
         KamokoGameStateServer game;
         lock (_lock)
-          game = _gamesPrivate[_gamesPrivateResolver[int.Parse(req.GameId)]];
+          game = _gamesPrivate[req.GameId];
 
         int total = 0, score = 0;
         switch (game.Difficult)
@@ -190,9 +186,9 @@ namespace KAMOKO.Game.Server
 
         KamokoGameStateServer game;
         lock (_lock)
-          game = _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]];
+          game = _gamesPrivate[Guid.Parse(gameId)];
 
-        if (game.AdminId != int.Parse(adminId))
+        if (game.AdminId != Guid.Parse(adminId))
           return new HttpResponse(arg, false, 501, "wrong AdminId");
 
         game.Start = DateTime.Now.AddSeconds(15);
@@ -213,7 +209,7 @@ namespace KAMOKO.Game.Server
         DateTime startTime;
         lock (_lock)
         {
-          startTime = _gamesPrivate[_gamesPrivateResolver[int.Parse(gameId)]].Start;
+          startTime = _gamesPrivate[Guid.Parse(gameId)].Start;
           notStarted = startTime == DateTime.MaxValue;
         }
 
@@ -239,7 +235,7 @@ namespace KAMOKO.Game.Server
           {
             var state = NewGameState(req, DateTime.Now.AddSeconds(90), DateTime.Now.AddMinutes(45));
             lock (_lock)
-              _gamesPublic.Add(RandomHelper.GetGuid(), state);
+              _gamesPublic.Add(Guid.NewGuid(), state);
 
             return new HttpResponse(arg, true, 200, state.CreatePlayerState());
           }
@@ -248,10 +244,10 @@ namespace KAMOKO.Game.Server
             var state = NewGameState(req, DateTime.MaxValue, DateTime.Now.AddDays(8));
             lock (_lock)
             {
-              var guid = RandomHelper.GetGuid();
+              var guid = Guid.NewGuid();
               var num = state.GameId;
 
-              _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+              _gamesPrivate.Add(Guid.NewGuid(), state);
             }
 
             return new HttpResponse(arg, true, 200, $"#GAME#{state.GameId}-{state.AdminId}");
@@ -261,7 +257,7 @@ namespace KAMOKO.Game.Server
         {
           var state = NewGameState(req, DateTime.Now.AddSeconds(10), DateTime.Now.AddMinutes(45));
           lock (_lock)
-            _gamesPrivate.Add(RandomHelper.GetGuid(), state);
+            _gamesPrivate.Add(Guid.NewGuid(), state);
 
           return new HttpResponse(arg, true, 200, state.CreatePlayerState());
         }
@@ -290,7 +286,7 @@ namespace KAMOKO.Game.Server
           break;
         }
 
-        var idx = RandomHelper.GetNumber(0, init.Count);
+        var idx = _rnd.Next(0, init.Count);
         var tmp = init[idx];
         init.RemoveAt(idx);
         rand.Add(tmp);
@@ -299,7 +295,7 @@ namespace KAMOKO.Game.Server
       var select = new QuestSentence[req.Questions];
       for (var i = 0; i < select.Length; i++)
       {
-        var idx = RandomHelper.GetNumber(0, rand.Count);
+        var idx = _rnd.Next(0, rand.Count);
         var tmp = rand[idx];
         rand.RemoveAt(idx);
         select[i] = course[tmp];
@@ -308,12 +304,12 @@ namespace KAMOKO.Game.Server
 
       return new KamokoGameStateServer
       {
-        AdminId = RandomHelper.GetNumber(),
+        AdminId = Guid.NewGuid(),
         Course = req.Course,
         Difficult = req.Difficult,
         Start = start,
         End = end,
-        GameId = RandomHelper.GetNumber(),
+        GameId = Guid.NewGuid(),
         Questions = select,
         Timeout = req.Timeout < 5 ? 5 : req.Timeout
       };
@@ -328,7 +324,7 @@ namespace KAMOKO.Game.Server
         if (req.IsPrivateGame)
         {
           lock (_lock)
-            return new HttpResponse(arg, true, 200, _gamesPrivate[_gamesPrivateResolver[int.Parse(req.GameId)]].CreatePlayerState());
+            return new HttpResponse(arg, true, 200, _gamesPrivate[req.GameId].CreatePlayerState());
         }
         else
         {
@@ -361,45 +357,7 @@ namespace KAMOKO.Game.Server
         return new HttpResponse(arg, false, 500);
       }
     }
-
-    private void LoadGames()
-    {
-      Console.WriteLine("RESTORED GAMES:");
-
-      LoadGames("gamesPublic", ref _gamesPublic);
-      LoadGames("gamesPrivate", ref _gamesPrivate);
-
-      Console.WriteLine($"{(_gamesPublic.Count + _gamesPrivate.Count):D3} GAMES RESTORED!");
-
-      _courseList = JsonConvert.SerializeObject(_courses.Keys.ToArray());
-    }
-
-    private void LoadGames(string dir, ref Dictionary<string, KamokoGameStateServer> gamesPublic)
-    {
-      var files = Directory.GetFiles(dir, "*.game");
-      foreach (var file in files)
-      {
-        Console.Write($"{file}...");
-
-        try
-        {
-          var game = JsonConvert.DeserializeObject<KamokoGameStateServer>(File.ReadAllText(file, Encoding.UTF8));
-          if (game.End < DateTime.Now)
-          {
-            File.Delete(file);
-            Console.WriteLine($"ok! > game deleted ({game.End})");
-            continue;
-          }
-          gamesPublic.Add(Path.GetFileNameWithoutExtension(file), game);
-          Console.WriteLine("ok!");
-        }
-        catch
-        {
-          Console.WriteLine("error!");
-        }
-      }
-    }
-
+    
     private void LoadCourses()
     {
       Console.WriteLine("AVAILABLE COURSES:");

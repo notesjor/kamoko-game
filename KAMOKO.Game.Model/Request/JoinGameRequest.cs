@@ -9,6 +9,6 @@ namespace KAMOKO.Game.Model.Request
   public class JoinGameRequest
   {
     public bool IsPrivateGame { get; set; }
-    public string GameId { get; set; }
+    public Guid GameId { get; set; }
   }
 }
