@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using KAMOKO.Game.Model.GameFile;
 using KAMOKO.Game.Model.GameMode;
 using KAMOKO.Game.Model.GameState;
@@ -38,11 +39,11 @@ namespace KAMOKO.Game.Server
       _workerTimespan = c.BackgroundWorkerTimespan;
 
       Console.Write($"Run KAMOKO.Game.Server on {c.Ip}:{c.Port}...");
-      _server = new Tfres.Server(c.Ip, c.Port, (arg) => new HttpResponse(arg, false, 500, null, null, null));
+      _server = new Tfres.Server(c.Ip, c.Port, (arg) => arg.Response.Send(500));
 
-      _server.AddEndpoint(HttpVerb.GET, "/ping", (arg) => new HttpResponse(arg, true, 200));
-      _server.AddEndpoint(HttpVerb.GET, "/time", (arg) => new HttpResponse(arg, true, 200, DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")));
-      _server.AddEndpoint(HttpVerb.GET, "/courses", (arg) => new HttpResponse(arg, true, 200, _courseList));
+      _server.AddEndpoint(HttpVerb.GET, "/ping", (arg) => arg.Response.Send(200));
+      _server.AddEndpoint(HttpVerb.GET, "/time", (arg) => arg.Response.Send(DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")));
+      _server.AddEndpoint(HttpVerb.GET, "/courses", (arg) => arg.Response.Send(_courseList));
       _server.AddEndpoint(HttpVerb.GET, "/opengames", ListOpenGamesRequest);
       _server.AddEndpoint(HttpVerb.POST, "/join", JoinGameRequest);
       _server.AddEndpoint(HttpVerb.POST, "/new", CreateGameRequest);
@@ -115,7 +116,7 @@ namespace KAMOKO.Game.Server
       }
     }
 
-    private HttpResponse StatisticsGameRequest(HttpRequest arg)
+    private Task StatisticsGameRequest(HttpContext arg)
     {
       try
       {
@@ -132,17 +133,17 @@ namespace KAMOKO.Game.Server
 
         return mode == "private"
                  ? game.AdminId != Guid.Parse(adminId)
-                     ? new HttpResponse(arg, false, 501, "wrong AdminId")
-                     : new HttpResponse(arg, true, 200, game.Answers.Select(x => x.Response).ToArray())
-                 : new HttpResponse(arg, true, 200, game.Answers.Select(x => x.Response).OrderByDescending(x => x.Score).Take(10).ToArray());
+                     ? arg.Response.Send(501)
+                     : arg.Response.Send(game.Answers.Select(x => x.Response).ToArray())
+                 : arg.Response.Send(game.Answers.Select(x => x.Response).OrderByDescending(x => x.Score).Take(10).ToArray());
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
-    private HttpResponse SubmitGameRequest(HttpRequest arg)
+    private Task SubmitGameRequest(HttpContext arg)
     {
       try
       {
@@ -168,15 +169,15 @@ namespace KAMOKO.Game.Server
         lock (_lock)
           game.Answers.Add(new ExtendedSubmitGameRequest { Request = req, Response = resp });
 
-        return new HttpResponse(arg, true, 200, resp);
+        return arg.Response.Send(resp);
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
-    private HttpResponse StartGameRequest(HttpRequest arg)
+    private Task StartGameRequest(HttpContext arg)
     {
       try
       {
@@ -189,18 +190,18 @@ namespace KAMOKO.Game.Server
           game = _gamesPrivate[Guid.Parse(gameId)];
 
         if (game.AdminId != Guid.Parse(adminId))
-          return new HttpResponse(arg, false, 501, "wrong AdminId");
+          return arg.Response.Send(501);
 
         game.Start = DateTime.Now.AddSeconds(15);
-        return new HttpResponse(arg, true, 200);
+        return arg.Response.Send(200);
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
-    private HttpResponse WaitGameRequest(HttpRequest arg)
+    private Task WaitGameRequest(HttpContext arg)
     {
       try
       {
@@ -214,16 +215,16 @@ namespace KAMOKO.Game.Server
         }
 
         return notStarted
-                 ? new HttpResponse(arg, true, 201, "wait")
-                 : new HttpResponse(arg, true, 200, (startTime - DateTime.Now).Seconds.ToString());
+                 ? arg.Response.Send(201)
+                 : arg.Response.Send((startTime - DateTime.Now).Seconds.ToString());
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
-    private HttpResponse CreateGameRequest(HttpRequest arg)
+    private Task CreateGameRequest(HttpContext arg)
     {
       try
       {
@@ -237,7 +238,7 @@ namespace KAMOKO.Game.Server
             lock (_lock)
               _gamesPublic.Add(Guid.NewGuid(), state);
 
-            return new HttpResponse(arg, true, 200, state.CreatePlayerState());
+            return arg.Response.Send(state.CreatePlayerState());
           }
           else
           {
@@ -250,7 +251,7 @@ namespace KAMOKO.Game.Server
               _gamesPrivate.Add(Guid.NewGuid(), state);
             }
 
-            return new HttpResponse(arg, true, 200, $"#GAME#{state.GameId}-{state.AdminId}");
+            return arg.Response.Send($"#GAME#{state.GameId}-{state.AdminId}");
           }
         }
         else
@@ -259,12 +260,12 @@ namespace KAMOKO.Game.Server
           lock (_lock)
             _gamesPrivate.Add(Guid.NewGuid(), state);
 
-          return new HttpResponse(arg, true, 200, state.CreatePlayerState());
+          return arg.Response.Send(state.CreatePlayerState());
         }
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
@@ -315,7 +316,7 @@ namespace KAMOKO.Game.Server
       };
     }
 
-    private HttpResponse JoinGameRequest(HttpRequest arg)
+    private Task JoinGameRequest(HttpContext arg)
     {
       try
       {
@@ -324,26 +325,26 @@ namespace KAMOKO.Game.Server
         if (req.IsPrivateGame)
         {
           lock (_lock)
-            return new HttpResponse(arg, true, 200, _gamesPrivate[req.GameId].CreatePlayerState());
+            return arg.Response.Send(_gamesPrivate[req.GameId].CreatePlayerState());
         }
         else
         {
           lock (_lock)
-            return new HttpResponse(arg, true, 200, _gamesPublic[req.GameId].CreatePlayerState());
+            return arg.Response.Send(_gamesPublic[req.GameId].CreatePlayerState());
         }
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
 
-    private HttpResponse ListOpenGamesRequest(HttpRequest arg)
+    private Task ListOpenGamesRequest(HttpContext arg)
     {
       try
       {
         lock (_lock)
-          return new HttpResponse(arg, true, 200, _gamesPublic.Values.Reverse().Take(25).Select(q => new OpenGameResponse
+          return arg.Response.Send(_gamesPublic.Values.Reverse().Take(25).Select(q => new OpenGameResponse
           {
             Course = q.Course,
             Questions = q.Questions.Length,
@@ -354,7 +355,7 @@ namespace KAMOKO.Game.Server
       }
       catch
       {
-        return new HttpResponse(arg, false, 500);
+        return arg.Response.Send(500);
       }
     }
     

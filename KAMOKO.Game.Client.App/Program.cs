@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace KAMOKO.Game.Client.App
@@ -6,14 +9,14 @@ namespace KAMOKO.Game.Client.App
   static class Program
   {
     /// <summary>
-    /// The main entry point for the application.
+    /// Der Haupteinstiegspunkt für die Anwendung.
     /// </summary>
     [STAThread]
     static void Main()
     {
       Application.EnableVisualStyles();
       Application.SetCompatibleTextRenderingDefault(false);
-      Application.Run(new RadForm1());
+      Application.Run(new MainForm());
     }
   }
 }
